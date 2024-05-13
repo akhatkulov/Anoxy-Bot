@@ -5,13 +5,13 @@ engine = create_engine("postgresql://postgres:1945@localhost/postgres")
 Base = declarative_base()
 
 class User(Base):
-    __tablename__ = 'user'
+    __tablename__ = 'user_anoxy'
     id = Column(Integer, primary_key=True, autoincrement=True)
     cid = Column(BigInteger, unique=True)
     cid2 = Column(BigInteger, default=0)
 
 class Step(Base):
-    __tablename__ = 'step'
+    __tablename__ = 'step_anoxy'
     id = Column(Integer,primary_key=True, autoincrement=True)
     cid = Column(BigInteger, unique=True)
     step = Column(String, default="0")
@@ -27,11 +27,13 @@ def get_all_user():
     res = []
     for i in x:
         res.append(i[0])
+        print(i[0])
     return res
 
 print(get_all_user())
 def user_count():
     x = session.query(func.count(User.id)).first()
+    print(x[0])
     return x[0]
 user_count()
 
@@ -63,7 +65,6 @@ def put_cid2(cid, cid2):
 
 def get_step(cid):
     x = session.query(Step).filter_by(cid=cid).first()
-    print(x.step)
     return x.step
 
 def put_step(cid,step):
