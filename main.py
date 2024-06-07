@@ -41,7 +41,6 @@ def more(message):
         bot.send_message(chat_id=message.chat.id,text="Forward xabaringizni yuboring")
         put_step(cid=message.chat.id,step="send")
     if get_step(int(message.chat.id)) == '1':
-
         x = message.chat.id
         bot.send_message(get_arg(message.chat.id),f"Yangi xabar keldi!<b>\n{message.text}\n</b>Javob yozish uchun tugmani bosing!",reply_markup=make_button(x))
         bot.send_message(message.chat.id, "Xabaringiz foydalanuvchiga yuborildi!")

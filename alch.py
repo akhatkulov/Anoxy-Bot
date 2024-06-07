@@ -16,7 +16,14 @@ class Step(Base):
     cid = Column(BigInteger, unique=True)
     step = Column(String, default="0")
     arg = Column(BigInteger,default=0)
-    
+
+
+class Channels(Base):
+    __tablename__ = 'channels_anoxy'
+    id = Column(Integer,primary_key=True,autoincrement=True)
+    link = Column(String,default="None",unique=True)
+
+
 Base.metadata.create_all(engine)
 
 Session = sessionmaker(bind=engine)
@@ -55,6 +62,7 @@ def get_members():
     print(x)
     return x
 
+
 print(session.query(User).all())
 
 def put_cid2(cid, cid2):
@@ -80,3 +88,17 @@ def put_arg(cid,arg):
     x = session.query(Step).filter_by(cid=cid).first()
     x.arg = arg
     session.commit()
+
+def put_channel(channel: str):
+    try:
+        x = Channels(link=channel)
+        session.add(x)
+        session.commit()
+        return True
+    except:
+        session.rollback()
+        return False
+
+def get_channel():
+    x = session.query(Channels).all()
+    return x
