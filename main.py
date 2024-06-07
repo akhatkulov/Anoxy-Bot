@@ -43,7 +43,7 @@ def more(message):
     if get_step(int(message.chat.id)) == '1':
 
         x = message.chat.id
-        bot.send_message(get_arg(message.chat.id),f"Yangi xabar keldi!\n{message.text}\nJavob yozish uchun tugmani bosing!",reply_markup=make_button(x))
+        bot.send_message(get_arg(message.chat.id),f"Yangi xabar keldi!<b>\n{message.text}\n</b>Javob yozish uchun tugmani bosing!",reply_markup=make_button(x))
         bot.send_message(message.chat.id, "Xabaringiz foydalanuvchiga yuborildi!")
         put_step(message.chat.id,'0')
     if get_step(message.chat.id)=='3':
@@ -58,17 +58,19 @@ def for_admin(message):
     print(message.chat.id)
     if get_step(int(message.chat.id))=='1':
 
-        x = message.chat.id
-        bot.copy_message(get_arg(message.chat.id), message.chat.id, message.id,
+        z = message.chat.id
+        bot.send_message(chat_id=z, text="Xabaringiz foydalanuvchiga yuborildi!")
+        x = bot.copy_message(get_arg(message.chat.id), message.chat.id, message.id,
                          caption=f"📨 Sizga yangi anonim xabar bor: <b>{message.caption}</b>",
-                         reply_markup=make_button(x))
-        bot.send_message(message.chat.id, "Xabaringiz foydalanuvchiga yuborildi!")
+                         reply_markup=make_button(z))
+        bot.send_message(chat_id=get_arg(z),text="...",reply_to_message_id=x.message_id,reply_markup=make_button(z))
+
         put_step(message.chat.id,'0')
     if get_step(message.chat.id)=='3':
         bot.send_message(chat_id=message.chat.id, text="Xabaringiz yuborildi!")
-        x = message.chat.id
-        bot.copy_message(get_cid2(message.chat.id), message.chat.id, message.id, caption=f"📨 Sizga yangi anonim xabar bor: <b>{message.caption}</b>",
-                         reply_markup=make_button(x))
+        z = message.chat.id
+        x = bot.copy_message(get_cid2(message.chat.id), message.chat.id, message.id, caption=f"📨 Sizga yangi anonim xabar bor: <b>{message.caption}</b>")
+        bot.send_message(chat_id=get_cid2(z),text="...",reply_to_message_id=x.message_id,reply_markup=make_button(z))
         put_step(message.chat.id,'0')
 
 @bot.callback_query_handler(func=lambda call: True)
