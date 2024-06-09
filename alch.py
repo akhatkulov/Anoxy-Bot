@@ -34,13 +34,13 @@ def get_all_user():
     res = []
     for i in x:
         res.append(i[0])
-        print(i[0])
+        # print(i[0])
     return res
 
-print(get_all_user())
+# print(get_all_user())
 def user_count():
     x = session.query(func.count(User.id)).first()
-    print(x[0])
+    # print(x[0])
     return x[0]
 user_count()
 
@@ -55,7 +55,7 @@ def create_user(cid):
         session.rollback()
 def get_cid2(cid):
     x = session.query(User).filter_by(cid=cid).first()
-    print(x.cid2)
+    # print(x.cid2)
     return x.cid2
 def get_members():
     x = session.query(User).where(User.cid>=0).all()
@@ -63,7 +63,7 @@ def get_members():
     return x
 
 
-print(session.query(User).all())
+# print(session.query(User).all())
 
 def put_cid2(cid, cid2):
     x = session.query(User).filter_by(cid=cid).first()
@@ -101,4 +101,9 @@ def put_channel(channel: str):
 
 def get_channel():
     x = session.query(Channels).all()
-    return x
+    res = []
+    for i in x:
+        res.append(i.link)
+    return res
+
+print(get_channel())
