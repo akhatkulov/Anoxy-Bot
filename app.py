@@ -1,7 +1,7 @@
 import telebot
 from telebot.types import InlineKeyboardButton,InlineKeyboardMarkup
 
-from alch import User,create_user,get_cid2,put_cid2,get_step,put_step,put_arg,get_arg,user_count,get_all_user,get_channel,put_channel
+from alch import User,create_user,get_cid2,put_cid2,get_step,put_step,put_arg,get_arg,user_count,get_all_user,get_channel,put_channel,get_channel_with_id,delete_channel
 
 bot = telebot.TeleBot('5899601127:AAGWIjpikVaUOuyNuqre1N3NvCnZJ--QEp8',parse_mode="html")
 
@@ -39,17 +39,21 @@ def join_key():
     keyboard.add(InlineKeyboardButton('✅ Tasdiqlash', callback_data='/start'))
     return keyboard
 def join(user_id):
-    xx = get_channel()
-    r = 0
-    for i in xx:
-        res = bot.get_chat_member(f"@{i}", user_id)
-        x = ['member', 'creator', 'administrator']
-        if res.status in x:
-            r+=1
-    if r!=len(xx):
-        bot.send_message(user_id,"<b>👋 Assalomu alaykum Botni ishga tushurish uchun kanallarga a'zo bo'ling va a'zolikni tekshirish buyrug'ini bosing.</b>",parse_mode='html',reply_markup=join_key())
-        return False
-    else:
+    try:
+        xx = get_channel()
+        r = 0
+        for i in xx:
+            res = bot.get_chat_member(f"@{i}", user_id)
+            x = ['member', 'creator', 'administrator']
+            if res.status in x:
+                r+=1
+        if r!=len(xx):
+            bot.send_message(user_id,"<b>👋 Assalomu alaykum Botni ishga tushurish uchun kanallarga a'zo bo'ling va a'zolikni tekshirish buyrug'ini bosing.</b>",parse_mode='html',reply_markup=join_key())
+            return False
+        else:
+            return True
+    except:
+        bot.send_message(chat_id=admin_id,text="Kanalga bot admin qilinmagan yoki xato~!")
         return True
 
 
@@ -68,14 +72,16 @@ def start(message):
     except:
         print("member error")
     if message.text=="/start" and join(message.chat.id):
+        put_step(cid=message.chat.id,step="!!!")
         status = get_cid2(message.chat.id)
         if status == 0:
             bot.send_message(message.chat.id,"Salom sizda sherik yo'q")
         else:
             bot.send_message(message.chat.id, 'Sizda hamroh bor xabar yuborish uchun "Xabar yuborish" tugmasini bosing',reply_markup=send_message())
 
-    if len(message.text)>6:
+    if "/start" in message.text and len(message.text)>6:
         adder = list(message.text.split())
+        put_step(cid=message.chat.id,step="!!!")
         put_cid2(cid=message.chat.id,cid2=adder[1])
         bot.send_message(message.chat.id, 'Sizda hamroh bor xabar yuborish uchun "Xabar yuborish" tugmasini bosing',reply_markup=send_message())
 
@@ -83,6 +89,16 @@ def start(message):
 def more(message):
     if message.text == "/admin" and message.chat.id == admin_id:
         bot.send_message(chat_id=admin_id,text="Salom, Admin",reply_markup=admin_buttons())
+        put_step(cid=message.chat.id,step="!!!")
+
+    if get_step(message.chat.id) == "channel_del" and message.text !="/start" and message.text != "/admin":
+        x = int(message.text)
+        if delete_channel(ch_id=x):
+            bot.send_message(chat_id=message.chat.id,text="Kanal olib tashlandi")
+            put_step(cid=message.chat.id,step="!!!")
+        else:
+            bot.send_message(chat_id=message.chat.id,text="Xatolik! IDni to'gri kiritdingizmi tekshiring!")
+
     if get_step(message.chat.id) == "add_channel" and message.text != "/start" and message.text != "/admin":
         if put_channel(message.text):
             bot.send_message(chat_id=message.chat.id,text=f"{message.text} kanali qabul qilindi!")
@@ -167,10 +183,14 @@ def callback_query(call):
         put_step(cid=call.message.chat.id, step="send")
         bot.send_message(chat_id=call.message.chat.id,text="Forward xabaringizni yuboring")
     if call.data == "channels" and str(call.message.chat.id) == str(admin_id):
-        bot.send_message(chat_id=call.message.chat.id,text=f"Kanallar ro'yxati:{[1,2,3]}",reply_markup=channel_control())
+        r = get_channel_with_id()
+        bot.send_message(chat_id=call.message.chat.id,text=f"Kanallar ro'yxati:{r}",reply_markup=channel_control())
     if call.data == "channel_add" and str(call.message.chat.id)==str(admin_id):
         put_step(cid=call.message.chat.id,step="add_channel")
         bot.send_message(chat_id=call.message.chat.id,text="Kanali linkini yuboring! bekor qilish uchun /start !")
+    if call.data == "channel_del":
+        put_step(cid=call.message.chat.id,step="channel_del")
+        bot.send_message(chat_id=call.message.chat.id,text=f"{get_channel_with_id()}\nO'chirmoqchi bo'lgan kanalingiz IDsini bering,bekor qilish uchun /start yoki /admin deng!")
 
 
 

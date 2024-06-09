@@ -42,7 +42,7 @@ def user_count():
     x = session.query(func.count(User.id)).first()
     # print(x[0])
     return x[0]
-user_count()
+
 
 def create_user(cid):
     try:
@@ -105,5 +105,22 @@ def get_channel():
     for i in x:
         res.append(i.link)
     return res
+def get_channel_with_id():
+    x = session.query(Channels).all()
+    cnt = session.query(func.count(Channels.id)).first()[0]
+    res = ""
+    for i in range(0,cnt):
+        res+=f"\nID: {x[i].id} \nLink: @{x[i].link}"
+    return res
 
-print(get_channel())
+def delete_channel(ch_id):
+    try:
+        x = session.query(Channels).filter_by(id=int(ch_id)).first()
+        session.delete(x)
+        session.commit()
+        return True
+    except:
+        session.rollback()
+        return False
+    
+print(get_channel_with_id())
