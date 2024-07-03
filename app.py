@@ -100,11 +100,11 @@ def start(message):
         status = get_cid2(message.chat.id)
         if status == 0:
             bot.send_message(message.chat.id,
-                             f"Salom sizda sherik yo'q\nTaklif linki:\nhttps://t.me/Anoxy_Bot?start={mini_crypt(str(message.chat.id))}",
+                             f"<b>Bor orqali matn,video,rasm,gif va audio yubora olasiz.\nBu sizning shaxsiy havolangiz:</b>\n\nhttps://t.me/Anoxy_Bot?start={mini_crypt(str(message.chat.id))}\n<b>Ulashish orqali anonim suhbat quring!</b>",
                              parse_mode='html')
         else:
             bot.send_message(message.chat.id,
-                             f'Sizda hamroh bor xabar yuborish uchun "Xabar yuborish" tugmasini bosing\nTaklif linki:\nhttps://t.me/Anoxy_Bot?start={mini_crypt(str(message.chat.id))}',
+                             f'Xabar yuborish uchun <b>"Xabar yuborish"</b> tugmasini bosing\nTaklif linki:\nhttps://t.me/Anoxy_Bot?start={mini_crypt(str(message.chat.id))}',
                              parse_mode='html', reply_markup=send_message())
 
     if "/start" in message.text and len(message.text) > 6:
@@ -113,7 +113,7 @@ def start(message):
         res = mini_decrypt(x)
         put_step(cid=message.chat.id, step="!!!")
         put_cid2(cid=message.chat.id, cid2=int(res))
-        bot.send_message(message.chat.id, 'Sizda hamroh bor xabar yuborish uchun "Xabar yuborish" tugmasini bosing',
+        bot.send_message(message.chat.id, 'Xabar yuborish uchun <b>"Xabar yuborish"</b> tugmasini bosing',
                          reply_markup=send_message())
 
 
@@ -169,12 +169,14 @@ def more(message):
                          reply_markup=make_button(x))
         bot.send_message(message.chat.id, "Xabaringiz foydalanuvchiga yuborildi!")
         put_step(message.chat.id, '0')
+        put_cid2(cid=message.chat.id, cid2=0)
     if get_step(message.chat.id) == '3' and join(message.chat.id):
         bot.send_message(chat_id=message.chat.id, text="Xabaringiz yuborildi!")
         x = message.chat.id
         bot.send_message(chat_id=get_cid2(message.chat.id), text=f"Sizda yangi xabar bor: <b>{message.text} </b>",
                          reply_markup=make_button(x))
         put_step(message.chat.id, '0')
+        put_cid2(cid=message.chat.id, cid2=0)
 
 
 @bot.message_handler(content_types=['document', 'gif', 'video', 'photo', 'audio', 'voice'])
@@ -187,6 +189,7 @@ def for_admin(message):
                              reply_markup=make_button(z))
         bot.send_message(chat_id=get_arg(z), text="...", reply_to_message_id=x.message_id, reply_markup=make_button(z))
         put_step(message.chat.id, '0')
+        put_cid2(cid=message.chat.id, cid2=0)
     if get_step(message.chat.id) == '3' and join(message.chat.id):
         bot.send_message(chat_id=message.chat.id, text="Xabaringiz yuborildi!")
         z = message.chat.id
@@ -194,6 +197,7 @@ def for_admin(message):
                              caption=f"📨 Sizga yangi anonim xabar bor: <b>{message.caption}</b>")
         bot.send_message(chat_id=get_cid2(z), text="...", reply_to_message_id=x.message_id, reply_markup=make_button(z))
         put_step(message.chat.id, '0')
+        put_cid2(cid=message.chat.id, cid2=0)
 
 
 @bot.callback_query_handler(func=lambda call: True)
@@ -201,10 +205,14 @@ def callback_query(call):
     if call.data == "/start" and join(call.message.chat.id):
         status = get_cid2(call.message.chat.id)
         if status == 0:
-            bot.send_message(call.message.chat.id, f"Salom sizda sherik yo'q\nTaklif linki:\nhttps://t.me/Anoxy_Bot?start={mini_crypt(str(call.message.chat.id))}")
+            bot.send_message(call.message.chat.id, f"""<b>Bu sizning shaxsiy havolangiz: </b>
+
+https://t.me/Anoxy_Bot?start={mini_crypt(str(call.message.chat.id))}
+
+<b>Ulashish orqali anonim suhbat quring!</b>""")
         else:
             bot.send_message(call.message.chat.id,
-                             f'Sizda hamroh bor xabar yuborish uchun "Xabar yuborish" tugmasini bosing\nTaklif linki:\nhttps://t.me/Anoxy_Bot?start={mini_crypt(str(call.message.chat.id))}',
+                             f'Xabar yuborish uchun "Xabar yuborish" tugmasini bosing\nTaklif linki:\nhttps://t.me/Anoxy_Bot?start={mini_crypt(str(call.message.chat.id))}',
                              reply_markup=send_message())
 
     if call.data == "Xabar yuborish" and join(call.message.chat.id):
