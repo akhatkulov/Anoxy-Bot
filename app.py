@@ -1,60 +1,16 @@
 import telebot
-from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup
+from telegraph import upload_file
+from io import BytesIO
 
 from alch import User, create_user, get_cid2, put_cid2, get_step, put_step, put_arg, get_arg, user_count, get_all_user, \
-    get_channel, put_channel, get_channel_with_id, delete_channel
+    get_channel, put_channel, get_channel_with_id, delete_channel,get_info,check_user,change_info
 
-bot = telebot.TeleBot('7024076459:AAGRYZpsRgOugWFY7Bu28tK7CRWIFGF8UVc', parse_mode="html")
-
-
-def admin_buttons():
-    x = InlineKeyboardMarkup(row_width=1)
-    btn1 = InlineKeyboardButton(text="Statistika", callback_data="stat")
-    btn2 = InlineKeyboardButton(text="Xabar yuborish", callback_data="send")
-    btn3 = InlineKeyboardButton(text="Kanallarni sozlash", callback_data="channels")
-    x.add(btn1, btn2, btn3)
-    return x
-
-
-def channel_control():
-    x = InlineKeyboardMarkup(row_width=2)
-    btn1 = InlineKeyboardButton(text="➕Kanal qo'shish", callback_data="channel_add")
-    btn2 = InlineKeyboardButton(text="➖Kanalni olib tashlash", callback_data="channel_del")
-    x.add(btn1, btn2)
-    return x
+from helper.buttons import admin_buttons,channel_control,make_button,send_message,join_key, home_keys,change_buttons,main_web_app
+from helper.functions import mini_decrypt, mini_crypt, is_number
+bot = telebot.TeleBot('6574267998:AAF6hn7xtmGrLC8fF3BESF_iFiWaGlh9IIA', parse_mode="html")
 
 
 admin_id = 6521895096
-
-
-def mini_crypt(a: str) -> str:
-    l = {'0': 'a', '1': 'x', '2': 'p', '3': 't', '4': 's', '5': 'l', '6': 'r', '7': 'f', '8': 'u', '9': 'e'}
-    res = ""
-    for char in a:
-        res += l[char]
-    return res
-
-
-def mini_decrypt(a: str) -> str:
-    l = {'a': '0', 'x': '1', 'p': '2', 't': '3', 's': '4', 'l': '5', 'r': '6', 'f': '7', 'u': '8', 'e': '9'}
-    res = ""
-    for char in a:
-        res += l[char]
-    return res
-
-
-def join_key():
-    keyboard = InlineKeyboardMarkup(row_width=1)
-    x = get_channel()
-    r = 1
-    for i in x:
-        keyboard.add(
-            InlineKeyboardButton(f"〽️ {r}-kanal", url=f"https://t.me/{i}")
-        )
-        r += 1
-    keyboard.add(InlineKeyboardButton('✅ Tasdiqlash', callback_data='/start'))
-    return keyboard
-
 
 def join(user_id):
     try:
@@ -77,17 +33,6 @@ def join(user_id):
         return True
 
 
-def make_button(cid):
-    x = InlineKeyboardMarkup(row_width=1)
-    x.add(InlineKeyboardButton("Xabar yuborish", callback_data=f"javob={cid}"))
-    return x
-
-
-def send_message():
-    return InlineKeyboardMarkup(row_width=1).add(
-        InlineKeyboardButton(text="Xabar yuborish", callback_data="Xabar yuborish"))
-
-
 @bot.message_handler(commands=['start'])
 def start(message):
     try:
@@ -100,11 +45,11 @@ def start(message):
         status = get_cid2(message.chat.id)
         if status == 0:
             bot.send_message(message.chat.id,
-                             f"<b>Bor orqali matn,video,rasm,gif va audio yubora olasiz.\nBu sizning shaxsiy havolangiz:</b>\n\nhttps://t.me/Anoxy_Bot?start={mini_crypt(str(message.chat.id))}\n<b>Ulashish orqali anonim suhbat quring!</b>",
-                             parse_mode='html')
+                             f"<b>Salom, {message.chat.first_name} botimizga xush kelibsiz</b>",
+                             parse_mode='html',reply_markup=home_keys())
         else:
             bot.send_message(message.chat.id,
-                             f'Xabar yuborish uchun <b>"Xabar yuborish"</b> tugmasini bosing\nTaklif linki:\nhttps://t.me/Anoxy_Bot?start={mini_crypt(str(message.chat.id))}',
+                             f'❗️Xabar yuborish uchun <b>"Xabar yuborish"</b> tugmasini bosing\n\n🔗Taklif linki:\nhttps://t.me/Anoxy_Bot?start={mini_crypt(str(message.chat.id))}',
                              parse_mode='html', reply_markup=send_message())
 
     if "/start" in message.text and len(message.text) > 6:
@@ -113,16 +58,31 @@ def start(message):
         res = mini_decrypt(x)
         put_step(cid=message.chat.id, step="!!!")
         put_cid2(cid=message.chat.id, cid2=int(res))
-        bot.send_message(message.chat.id, 'Xabar yuborish uchun <b>"Xabar yuborish"</b> tugmasini bosing',
+        bot.send_message(message.chat.id, '❗️Xabar yuborish uchun <b>"Xabar yuborish"</b> tugmasini bosing',
                          reply_markup=send_message())
 
 
 @bot.message_handler(content_types=['text'])
 def more(message):
+    if message.text == "🔍Qidirish":
+        if check_user(cid=message.chat.id):
+            bot.send_message(chat_id=message.chat.id,text="👇👇👇",reply_markup=main_web_app(cid=message.chat.id))
+        else:
+            bot.send_message(chat_id=message.chat.id,text="Profilni yetarlicha to'ldirmagansiz!!!")
+    
+    if message.text == "👤Profil":
+        user_info = get_info(cid=message.chat.id)
+        res = f"<b>Rasm:</b><a href='{user_info['pic']}'>LINK</a>\n<b>Ism:</b> {user_info["name"]}\n<b>Bio:</b> {user_info["info"]}\n<b>Yosh:</b> {user_info["age"]}\n<b>Kontakt:</b> {user_info["contact"]}\n\n<b>Savol-Javob uchun havola👇</b>\nhttps://t.me/Anoxy_Bot?start={mini_crypt(str(message.chat.id))}\n\n<b>Agarda ma'lumotlaringizdan birini o'zgartirmoqchi bo'lsangiz👇</b>"
+        bot.send_message(chat_id=message.chat.id,text=res,parse_mode="html",reply_markup=change_buttons())
+    
+    if message.text == "📖Qo'llanma":
+        bot.send_message(chat_id=message.chat.id,text="Tez kunda...")
+    
     if message.text == '/link' and join(message.chat.id):
         bot.send_message(message.chat.id,
-                         f"\nTaklif linki:\nhttps://t.me/Anoxy_Bot?start={mini_crypt(str(message.chat.id))}",
+                         f"\n🔗Taklif linki:\nhttps://t.me/Anoxy_Bot?start={mini_crypt(str(message.chat.id))}",
                          parse_mode='html')
+    
     if message.text == "/admin" and message.chat.id == admin_id:
         bot.send_message(chat_id=admin_id, text="Salom, Admin", reply_markup=admin_buttons())
         put_step(cid=message.chat.id, step="!!!")
@@ -143,6 +103,7 @@ def more(message):
             bot.send_message(chat_id=message.chat.id,
                              text="Xatolik! Bu kanal oldin qo'shilgan bo'lishi mumkin yoki boshqa xatolik, iltimos tekshiring")
             put_step(cid=int(admin_id), step="!!!")
+    
     if get_step(message.chat.id) == 'send':
         text = message.text
         mid = message.id
@@ -157,11 +118,14 @@ def more(message):
             put_step(cid=int(admin_id), step="!!!")
         except Exception as e:
             bot.send_message(chat_id=message.chat.id, text=f"Xabar yuborishda muammo bo'ldi: {str(e)}")
+    
     if message.text == "/stat" and message.chat.id == admin_id:
         bot.send_message(chat_id=message.chat.id, text=f"Foydalanuvchilar soni: {user_count()}")
+    
     if message.text == "/send" and message.chat.id == admin_id:
         bot.send_message(chat_id=message.chat.id, text="Forward xabaringizni yuboring")
         put_step(cid=message.chat.id, step="send")
+    
     if get_step(int(message.chat.id)) == '1' and join(message.chat.id):
         x = message.chat.id
         bot.send_message(get_arg(message.chat.id),
@@ -170,6 +134,7 @@ def more(message):
         bot.send_message(message.chat.id, "Xabaringiz foydalanuvchiga yuborildi!")
         put_step(message.chat.id, '0')
         put_cid2(cid=message.chat.id, cid2=0)
+    
     if get_step(message.chat.id) == '3' and join(message.chat.id):
         bot.send_message(chat_id=message.chat.id, text="Xabaringiz yuborildi!")
         x = message.chat.id
@@ -177,7 +142,32 @@ def more(message):
                          reply_markup=make_button(x))
         put_step(message.chat.id, '0')
         put_cid2(cid=message.chat.id, cid2=0)
+    
+    if get_step(message.chat.id) == "change_name":
+        if len(message.text) < 75:
+            change_info(cid=message.chat.id,type_info="name",value=message.text)
+            bot.send_message(chat_id=message.chat.id,text=f"Ismingiz <b>{message.text}</b>ga o'zgartirildi✅",parse_mode="html")
+            put_step(message.chat.id, '0')
+        else:
+            bot.send_message(cid=message.chat.id,text="Xatolik! Ism haddan tashqari uzun. Qaytadan yuboring:")
 
+    if get_step(message.chat.id) == "change_bio":
+        change_info(cid=message.chat.id,type_info="info",value=message.text)
+        bot.send_message(chat_id=message.chat.id,text="O'zgartirildi✅")
+        put_step(message.chat.id, '0')
+
+    if get_step(message.chat.id) == "change_contact":
+        change_info(cid=message.chat.id,type_info="contact",value=message.text)
+        bot.send_message(chat_id=message.chat.id,text="O'zgartirildi✅")
+        put_step(message.chat.id, '0')
+    
+    if get_step(message.chat.id) == "change_age":
+        if is_number(message.text):
+            change_info(cid=message.chat.id,type_info="age",value=int(message.text))
+            bot.send_message(chat_id=message.chat.id,text="O'zgartirildi✅")
+            put_step(message.chat.id, '0')           
+        else:
+            bot.send_message(chat_id=message.chat.id,text="Xatolik! Menga raqam yuboring!")
 
 @bot.message_handler(content_types=['document', 'gif', 'video', 'photo', 'audio', 'voice'])
 def for_admin(message):
@@ -198,6 +188,21 @@ def for_admin(message):
         bot.send_message(chat_id=get_cid2(z), text="...", reply_to_message_id=x.message_id, reply_markup=make_button(z))
         put_step(message.chat.id, '0')
         put_cid2(cid=message.chat.id, cid2=0)
+    if get_step(message.chat.id) =="change_pic":
+        file_id = message.photo[-1].file_id
+        file_info = bot.get_file(file_id)
+        downloaded_file = bot.download_file(file_info.file_path)
+
+        file_stream = BytesIO(downloaded_file)
+        file_stream.name = 'temp.jpg' 
+
+        try:
+            response = upload_file(file_stream)
+            telegraph_url = 'https://telegra.ph' + response[0]
+            bot.reply_to(message, f"<a href='{telegraph_url}'>O'zgartirildi✅</a>",parse_mode="html")
+            change_info(cid=message.chat.id,type_info="pic",value=telegraph_url)
+        except Exception as e:
+            bot.reply_to(message, f"Xato: {e}")
 
 
 @bot.callback_query_handler(func=lambda call: True)
@@ -205,14 +210,14 @@ def callback_query(call):
     if call.data == "/start" and join(call.message.chat.id):
         status = get_cid2(call.message.chat.id)
         if status == 0:
-            bot.send_message(call.message.chat.id, f"""<b>Bu sizning shaxsiy havolangiz: </b>
+            bot.send_message(call.message.chat.id, f"""<b>🔗Bu sizning shaxsiy havolangiz: </b>
 
 https://t.me/Anoxy_Bot?start={mini_crypt(str(call.message.chat.id))}
 
-<b>Ulashish orqali anonim suhbat quring!</b>""")
+<b>♻️Ulashish orqali anonim suhbat quring!</b>""")
         else:
             bot.send_message(call.message.chat.id,
-                             f'Xabar yuborish uchun "Xabar yuborish" tugmasini bosing\nTaklif linki:\nhttps://t.me/Anoxy_Bot?start={mini_crypt(str(call.message.chat.id))}',
+                             f'❗️Xabar yuborish uchun "Xabar yuborish" tugmasini bosing\n\n🔗Taklif linki:\nhttps://t.me/Anoxy_Bot?start={mini_crypt(str(call.message.chat.id))}',
                              reply_markup=send_message())
 
     if call.data == "Xabar yuborish" and join(call.message.chat.id):
@@ -236,7 +241,23 @@ https://t.me/Anoxy_Bot?start={mini_crypt(str(call.message.chat.id))}
     if call.data == "channel_del" and str(call.message.chat.id) == str(admin_id):
         put_step(cid=call.message.chat.id, step="channel_del")
         bot.send_message(chat_id=call.message.chat.id,
-                         text=f"{get_channel_with_id()}\nO'chirmoqchi bo'lgan kanalingiz IDsini bering, bekor qilish uchun /start yoki /admin deng!")
+                         text=f"{get_channel_with_id()}\n⚠️O'chirmoqchi bo'lgan kanalingiz IDsini bering, bekor qilish uchun /start yoki /admin deng!")
+
+    if call.data == "change_name":
+        put_step(cid=call.message.chat.id,step="change_name")
+        bot.send_message(chat_id=call.message.chat.id,text="✍️Ismingizni yuboring:")
+    if call.data == "change_bio":
+        put_step(cid=call.message.chat.id,step="change_bio")
+        bot.send_message(chat_id=call.message.chat.id,text="Yangi ma'lumotlarni yuboring")
+    if call.data == "change_contact":
+        put_step(cid=call.message.chat.id,step="change_contact")
+        bot.send_message(chat_id=call.message.chat.id,text="Siz bilan bog'lanish uchun yangi kontaktlarni bering")
+    if call.data == "change_age":
+        put_step(cid=call.message.chat.id,step="change_age")
+        bot.send_message(chat_id=call.message.chat.id,text="Yoshingizni yuboring")
+    if call.data == "change_pic":
+        put_step(cid=call.message.chat.id,step="change_pic")
+        bot.send_message(chat_id=call.message.chat.id,text="1 dona rasm yuboring!")
 
 
 if __name__ == '__main__':

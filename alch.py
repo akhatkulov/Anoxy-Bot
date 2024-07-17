@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, MetaData, Table, Column, Integer, String, BigInteger, func
+from sqlalchemy import create_engine, MetaData, Table, Column, Integer, String, BigInteger, func,VARCHAR
 from sqlalchemy.orm import sessionmaker, declarative_base
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -10,6 +10,16 @@ class User(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     cid = Column(BigInteger, unique=True)
     cid2 = Column(BigInteger, default=0)
+
+class User_info(Base):
+    __tablename__ = 'info_anoxy'
+    id = Column(Integer,primary_key=True,autoincrement=True)
+    cid = Column(BigInteger,unique=True)
+    pic = Column(String,nullable=False)
+    name = Column(VARCHAR(75))
+    age = Column(Integer)
+    info = Column(String)
+    contact = Column(String)
 
 class Step(Base):
     __tablename__ = 'step_anoxy'
@@ -26,9 +36,9 @@ class Channels(Base):
 Base.metadata.create_all(engine)
 
 Session = sessionmaker(bind=engine)
+session = Session()
 
 def get_all_user():
-    session = Session()
     try:
         x = session.query(User.cid).all()
         res = [i[0] for i in x]
@@ -37,7 +47,6 @@ def get_all_user():
         session.close()
 
 def user_count():
-    session = Session()
     try:
         x = session.query(func.count(User.id)).first()
         return x[0]
@@ -45,12 +54,13 @@ def user_count():
         session.close()
 
 def create_user(cid):
-    session = Session()
     try:
         user = User(cid=int(cid), cid2=0)
         step = Step(cid=int(cid), step="0", arg=0)
+        info = User_info(cid=int(cid), pic="demo link")
         session.add(user)
         session.add(step)
+        session.add(info)
         session.commit()
     except SQLAlchemyError as e:
         session.rollback()
@@ -58,8 +68,55 @@ def create_user(cid):
     finally:
         session.close()
 
+def get_info(cid : int):
+    try:
+        x = session.query(User_info).filter_by(cid=cid).first()
+        res = {"cid":cid, "age" : x.age ,"name": x.name, "info":x.info, "contact": x.contact,'pic':x.pic}
+        return res 
+    finally:
+        session.close()
+
+def change_info(cid : int, type_info : str, value : str):
+    x = session.query(User_info).filter_by(cid=cid).first()
+    try:
+        if type_info == "name":
+            x.name = value
+        elif type_info == "info":
+            x.info = value
+        elif type_info == "contact":
+            x.contact = value
+        elif type_info == "pic":
+            x.pic = value
+        elif type_info == "age":
+            x.age = int(value)
+        session.commit()
+        return True
+    except SQLAlchemyError as e:
+        session.rollback()
+        print(f"Error: {e}")
+        return False
+    finally:
+        session.close()
+
+def check_user(cid : int):
+    try:
+        x = session.query(User_info).filter_by(cid=cid).first()
+        name = x.name
+        info = x.info 
+        pic = x.pic
+        contact = x.contact
+        if name == None or info == None or pic == None or contact == None:
+            return False
+        else:
+            return True
+    except:
+        return False
+    finally:
+        session.close()
+
+
+
 def get_cid2(cid):
-    session = Session()
     try:
         x = session.query(User).filter_by(cid=cid).first()
         return x.cid2 if x else None
@@ -67,7 +124,6 @@ def get_cid2(cid):
         session.close()
 
 def get_members():
-    session = Session()
     try:
         x = session.query(User).where(User.cid >= 0).all()
         return x
@@ -75,7 +131,6 @@ def get_members():
         session.close()
 
 def put_cid2(cid, cid2):
-    session = Session()
     try:
         x = session.query(User).filter_by(cid=cid).first()
         if x:
@@ -88,7 +143,6 @@ def put_cid2(cid, cid2):
         session.close()
 
 def get_step(cid):
-    session = Session()
     try:
         x = session.query(Step).filter_by(cid=cid).first()
         return x.step if x else None
@@ -96,7 +150,6 @@ def get_step(cid):
         session.close()
 
 def put_step(cid, step):
-    session = Session()
     try:
         x = session.query(Step).filter_by(cid=cid).first()
         if x:
@@ -109,7 +162,6 @@ def put_step(cid, step):
         session.close()
 
 def get_arg(cid):
-    session = Session()
     try:
         x = session.query(Step).filter_by(cid=cid).first()
         return x.arg if x else None
@@ -117,7 +169,6 @@ def get_arg(cid):
         session.close()
 
 def put_arg(cid, arg):
-    session = Session()
     try:
         x = session.query(Step).filter_by(cid=cid).first()
         if x:
@@ -130,7 +181,6 @@ def put_arg(cid, arg):
         session.close()
 
 def put_channel(channel: str):
-    session = Session()
     try:
         x = Channels(link=channel)
         session.add(x)
@@ -144,7 +194,6 @@ def put_channel(channel: str):
         session.close()
 
 def get_channel():
-    session = Session()
     try:
         x = session.query(Channels).all()
         res = [i.link for i in x]
@@ -153,7 +202,6 @@ def get_channel():
         session.close()
 
 def get_channel_with_id():
-    session = Session()
     try:
         x = session.query(Channels).all()
         res = ""
@@ -164,7 +212,6 @@ def get_channel_with_id():
         session.close()
 
 def delete_channel(ch_id):
-    session = Session()
     try:
         x = session.query(Channels).filter_by(id=int(ch_id)).first()
         if x:
@@ -177,5 +224,3 @@ def delete_channel(ch_id):
         return False
     finally:
         session.close()
-
-print(get_channel_with_id())
