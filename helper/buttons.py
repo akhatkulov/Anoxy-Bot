@@ -63,3 +63,10 @@ def main_web_app(cid):
     button = InlineKeyboardButton(text="Tab", web_app=web_app_info)
     markup.add(button)
     return markup
+
+def choose_gender():
+    x = InlineKeyboardMarkup(row_width=1)
+    btn1 = InlineKeyboardButton(text="🧑 Erkak",callback_data="change_gender_to_man")
+    btn2 = InlineKeyboardButton(text="👩‍🦰 Ayol",callback_data="change_gender_to_woman")
+    x.add(btn1,btn2)
+    return x 

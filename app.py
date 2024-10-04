@@ -1,5 +1,5 @@
 import telebot
-from telegraph import upload_file
+from photolink import PhotoLink
 from io import BytesIO
 
 from alch import User, create_user, get_cid2, put_cid2, get_step, put_step, put_arg, get_arg, user_count, get_all_user, \
@@ -7,10 +7,15 @@ from alch import User, create_user, get_cid2, put_cid2, get_step, put_step, put_
 
 from helper.buttons import admin_buttons,channel_control,make_button,send_message,join_key, home_keys,change_buttons,main_web_app
 from helper.functions import mini_decrypt, mini_crypt, is_number
-bot = telebot.TeleBot('6574267998:AAF6hn7xtmGrLC8fF3BESF_iFiWaGlh9IIA', parse_mode="html")
+
+import conf
+
+bot = telebot.TeleBot(conf.BOT_TOKEN, parse_mode="html")
 
 
-admin_id = 6521895096
+admin_id = conf.ADMIN_ID
+photolink = PhotoLink()
+
 
 def join(user_id):
     try:
@@ -168,6 +173,7 @@ def more(message):
             put_step(message.chat.id, '0')           
         else:
             bot.send_message(chat_id=message.chat.id,text="Xatolik! Menga raqam yuboring!")
+    
 
 @bot.message_handler(content_types=['document', 'gif', 'video', 'photo', 'audio', 'voice'])
 def for_admin(message):
@@ -197,9 +203,8 @@ def for_admin(message):
         file_stream.name = 'temp.jpg' 
 
         try:
-            response = upload_file(file_stream)
-            telegraph_url = 'https://telegra.ph' + response[0]
-            bot.reply_to(message, f"<a href='{telegraph_url}'>O'zgartirildi✅</a>",parse_mode="html")
+            upload = photolink.upload_image(file_path=file_stream)
+            bot.reply_to(message, f"<a href='{upload}'>O'zgartirildi✅</a>",parse_mode="html")
             change_info(cid=message.chat.id,type_info="pic",value=telegraph_url)
         except Exception as e:
             bot.reply_to(message, f"Xato: {e}")
@@ -243,6 +248,8 @@ https://t.me/Anoxy_Bot?start={mini_crypt(str(call.message.chat.id))}
         bot.send_message(chat_id=call.message.chat.id,
                          text=f"{get_channel_with_id()}\n⚠️O'chirmoqchi bo'lgan kanalingiz IDsini bering, bekor qilish uchun /start yoki /admin deng!")
 
+    if call.data == "change_gender":
+        bot.send_message(chat_id=message.chat.id,text="Tanlang:",reply_markup=choose_gender())
     if call.data == "change_name":
         put_step(cid=call.message.chat.id,step="change_name")
         bot.send_message(chat_id=call.message.chat.id,text="✍️Ismingizni yuboring:")
@@ -258,6 +265,15 @@ https://t.me/Anoxy_Bot?start={mini_crypt(str(call.message.chat.id))}
     if call.data == "change_pic":
         put_step(cid=call.message.chat.id,step="change_pic")
         bot.send_message(chat_id=call.message.chat.id,text="1 dona rasm yuboring!")
+
+    if call.data == "change_gender_to_man":
+        put_arg(cid=call.message.chat.id,type_info="gender",value="erkak")
+        bot.send_message(chat_id=call.message.chat.id,text="Bajarildi✅")
+    if call.data == "change_gender_to_woman":
+        put_arg(cid=call.message.chat.id,type_info="gender",value="ayol")
+        bot.send_message(chat_id=call.message.chat.id,text="Bajarildi✅")
+
+
 
 
 if __name__ == '__main__':

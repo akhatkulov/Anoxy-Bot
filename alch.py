@@ -2,7 +2,9 @@ from sqlalchemy import create_engine, MetaData, Table, Column, Integer, String, 
 from sqlalchemy.orm import sessionmaker, declarative_base
 from sqlalchemy.exc import SQLAlchemyError
 
-engine = create_engine("postgresql://postgres:1945@localhost/postgres")
+import conf
+
+engine = create_engine(conf.DB_URI)
 Base = declarative_base()
 
 class User(Base):
@@ -17,6 +19,7 @@ class User_info(Base):
     cid = Column(BigInteger,unique=True)
     pic = Column(String,nullable=False)
     name = Column(VARCHAR(75))
+    gender = Column(VARCHAR(75))
     age = Column(Integer)
     info = Column(String)
     contact = Column(String)
@@ -71,7 +74,7 @@ def create_user(cid):
 def get_info(cid : int):
     try:
         x = session.query(User_info).filter_by(cid=cid).first()
-        res = {"cid":cid, "age" : x.age ,"name": x.name, "info":x.info, "contact": x.contact,'pic':x.pic}
+        res = {"cid":cid, "age" : x.age ,"name": x.name, "info":x.info, "contact": x.contact,'pic':x.pic,"gender":x.gender}
         return res 
     finally:
         session.close()
@@ -81,6 +84,8 @@ def change_info(cid : int, type_info : str, value : str):
     try:
         if type_info == "name":
             x.name = value
+        elif type_info == "gender":
+            x.gender = value
         elif type_info == "info":
             x.info = value
         elif type_info == "contact":
@@ -105,7 +110,8 @@ def check_user(cid : int):
         info = x.info 
         pic = x.pic
         contact = x.contact
-        if name == None or info == None or pic == None or contact == None:
+        gender = x.gender
+        if name == None or info == None or pic == None or contact == None or gender == None:
             return False
         else:
             return True
