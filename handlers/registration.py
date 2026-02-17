@@ -195,7 +195,7 @@ async def process_target_gender(callback: types.CallbackQuery, state: FSMContext
 async def process_target_age(callback: types.CallbackQuery, state: FSMContext):
     data = await state.get_data()
     lang = data['language']
-    _, min_age, max_age = callback.data.split("_")
+    prefix, min_age, max_age = callback.data.split("_")
     
     await state.update_data(target_min_age=int(min_age), target_max_age=int(max_age))
     

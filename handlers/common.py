@@ -341,7 +341,8 @@ async def edit_target_age(callback: types.CallbackQuery, session: AsyncSession):
 @router.callback_query(F.data.startswith("set_age_"))
 async def process_edit_target_age(callback: types.CallbackQuery, session: AsyncSession):
     user = await session.get(User, callback.from_user.id)
-    _, min_age, max_age = callback.data.split("_")
+    parts = callback.data.split("_")  # ["set", "age", "18", "25"]
+    min_age, max_age = parts[-2], parts[-1]
     user.target_min_age = int(min_age)
     user.target_max_age = int(max_age)
     await session.commit()

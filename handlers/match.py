@@ -41,7 +41,7 @@ async def process_search_gender(callback: types.CallbackQuery, state: FSMContext
 
 @router.callback_query(SearchStates.age_range, F.data.startswith("age_"))
 async def process_search_age(callback: types.CallbackQuery, state: FSMContext, session: AsyncSession):
-    _, min_age, max_age = callback.data.split("_")
+    prefix, min_age, max_age = callback.data.split("_")
     await state.update_data(search_min_age=int(min_age), search_max_age=int(max_age))
     
     user = await session.get(User, callback.from_user.id)
