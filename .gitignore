@@ -1,0 +1,15 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+
+# Environment variables
+.env
+.env.*
+
+# Docker data volumes
+redis_data/
+postgres_data/
+backups/
+media/
