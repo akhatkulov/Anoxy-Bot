@@ -266,8 +266,6 @@ async def process_edit_photo(message: types.Message, state: FSMContext, session:
 
 @router.callback_query(F.data == "edit_location")
 async def edit_location(callback: types.CallbackQuery, state: FSMContext):
-    user = await (callback.message.bot.get_me()) # Just to get context or user.language if needed
-    from keyboards.registration import get_location_kb # reused or define here
     kb = [[types.KeyboardButton(text="📍 Joylashuvni jo'natish", request_location=True)]]
     msg = await callback.message.answer(
         "Yangi joylashuvingizni yuboring:", 
