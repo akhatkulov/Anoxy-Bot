@@ -22,6 +22,7 @@ async def init_db():
             await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS last_like_notification_id BIGINT"))
             await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS target_min_age INTEGER DEFAULT 14"))
             await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS target_max_age INTEGER DEFAULT 100"))
+            await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_frozen BOOLEAN DEFAULT FALSE"))
         except Exception as e:
             logging.warning(f"Could not update schema: {e}")
         

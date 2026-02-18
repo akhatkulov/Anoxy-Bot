@@ -28,6 +28,7 @@ class User(Base):
     boost_points = Column(Integer, default=0, index=True) # Added index
     referred_by = Column(BigInteger, ForeignKey("users.id"), nullable=True, index=True)
     is_banned = Column(Boolean, default=False, index=True)
+    is_frozen = Column(Boolean, default=False, index=True)
     
     pending_likes_count = Column(Integer, default=0)
     last_like_notification_id = Column(BigInteger, nullable=True)

@@ -31,6 +31,7 @@ async def get_next_profile(session: AsyncSession, current_user: User,
         User.id != current_user.id,
         User.gender == gender_filter,
         User.is_banned == False,
+        User.is_frozen == False,
         ~seen_stmt
     ]
     

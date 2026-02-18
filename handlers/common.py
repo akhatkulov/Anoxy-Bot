@@ -1,8 +1,9 @@
+import os
 from aiogram import Router, types, F
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, delete, update
 from core.database.models import User, Like, Report
 from states.profile import ProfileEditStates
 from states.search import SearchStates
@@ -30,13 +31,15 @@ async def cmd_me(message: types.Message, session: AsyncSession, user_id: int = N
     t_gender = _('targets_male', user.language) if user.target_gender == 'male' else _('targets_female', user.language)
     t_age = f"{user.target_min_age}-{user.target_max_age}"
     
+    frozen_status = f"\n\n❄️ <b>{_('freeze_msg', user.language)}</b>" if user.is_frozen else ""
+    
     text = _('profile_info', user.language, 
              name=user.name, 
              age=user.age, 
              boost=user.boost_points, 
              t_gender=t_gender, 
              t_age=t_age,
-             link=referral_link)
+             link=referral_link) + frozen_status
     
     kb = [
         [
@@ -52,6 +55,10 @@ async def cmd_me(message: types.Message, session: AsyncSession, user_id: int = N
             types.InlineKeyboardButton(text=_('btn_edit_target_age', user.language), callback_data="edit_target_age")
         ],
         [types.InlineKeyboardButton(text=_('btn_activity', user.language), callback_data="menu_activity")],
+        [
+            types.InlineKeyboardButton(text=_('btn_unfreeze_account' if user.is_frozen else 'btn_freeze_account', user.language), callback_data="toggle_freeze"),
+            types.InlineKeyboardButton(text=_('btn_delete_account', user.language), callback_data="confirm_delete_account")
+        ],
         [types.InlineKeyboardButton(text=_('btn_back', user.language), callback_data="back_to_menu")]
     ]
     
@@ -92,6 +99,16 @@ async def menu_search_start(callback: types.CallbackQuery, state: FSMContext, se
     from handlers.match import show_profile
     from states.search import SearchStates
     user = await session.get(User, callback.from_user.id)
+    
+    if user.is_frozen:
+        kb = [
+            [types.InlineKeyboardButton(text=_('btn_unfreeze_account', user.language), callback_data="unfreeze_and_search")],
+            [types.InlineKeyboardButton(text=_('btn_back', user.language), callback_data="back_to_menu")]
+        ]
+        await callback.message.edit_text(_('freeze_msg', user.language), reply_markup=types.InlineKeyboardMarkup(inline_keyboard=kb))
+        await callback.answer()
+        return
+
     await callback.message.delete()
     await state.set_state(SearchStates.browsing)
     await show_profile(callback.message, user, session, state)
@@ -99,7 +116,6 @@ async def menu_search_start(callback: types.CallbackQuery, state: FSMContext, se
 
 @router.callback_query(F.data == "menu_boost")
 async def menu_boost_info(callback: types.CallbackQuery, session: AsyncSession):
-    import os
     admin_contact = os.getenv("ADMIN_CONTACT", "@admin")
     
     user = await session.get(User, callback.from_user.id)
@@ -354,3 +370,66 @@ async def back_to_me(callback: types.CallbackQuery, session: AsyncSession):
     await callback.message.delete()
     await cmd_me(callback.message, session, user_id=callback.from_user.id)
     await callback.answer()
+@router.callback_query(F.data == "toggle_freeze")
+async def toggle_freeze(callback: types.CallbackQuery, session: AsyncSession):
+    user = await session.get(User, callback.from_user.id)
+    user.is_frozen = not user.is_frozen
+    await session.commit()
+    
+    msg = _('unfreeze_msg' if not user.is_frozen else 'freeze_msg', user.language)
+    await callback.answer(msg, show_alert=True)
+    
+    await callback.message.delete()
+    await cmd_me(callback.message, session, user_id=user.id)
+
+@router.callback_query(F.data == "confirm_delete_account")
+async def confirm_delete_account(callback: types.CallbackQuery, session: AsyncSession):
+    user = await session.get(User, callback.from_user.id)
+    kb = [
+        [types.InlineKeyboardButton(text="✅ Ha", callback_data="delete_account_final")],
+        [types.InlineKeyboardButton(text="❌ Yo'q", callback_data="back_to_me")]
+    ]
+    await callback.message.edit_text(
+        _('confirm_delete', user.language),
+        reply_markup=types.InlineKeyboardMarkup(inline_keyboard=kb)
+    )
+    await callback.answer()
+
+@router.callback_query(F.data == "delete_account_final")
+async def delete_account_final(callback: types.CallbackQuery, session: AsyncSession, state: FSMContext):
+    user = await session.get(User, callback.from_user.id)
+    lang = user.language
+    
+    # Delete related records (Likes and Reports) or let SQLAlchemy handle it if configured
+    # We'll just delete the user, and if relationships are set to cascade it will work.
+    # Looking at models.py, cascade isn't explicitly set, so we might need to delete manually
+    # 1. Update users referred by this user to have referred_by = None
+    await session.execute(update(User).where(User.referred_by == user.id).values(referred_by=None))
+    
+    # 2. Delete related records (Likes and Reports)
+    await session.execute(delete(Like).where((Like.user_id == user.id) | (Like.target_id == user.id)))
+    await session.execute(delete(Report).where((Report.reporter_id == user.id) | (Report.target_id == user.id)))
+    
+    # 3. Delete photo if exists
+    if user.photo_path:
+        photo_full_path = f"media/{user.photo_path}"
+        if os.path.exists(photo_full_path):
+            try: os.remove(photo_full_path)
+            except: pass
+
+    # 4. Delete the user
+    await session.delete(user)
+    await session.commit()
+    await state.clear()
+    
+    await callback.message.delete()
+    await callback.message.answer(_('account_deleted', lang))
+    await callback.answer()
+
+@router.callback_query(F.data == "unfreeze_and_search")
+async def unfreeze_and_search(callback: types.CallbackQuery, session: AsyncSession, state: FSMContext):
+    user = await session.get(User, callback.from_user.id)
+    user.is_frozen = False
+    await session.commit()
+    await callback.answer(_('unfreeze_msg', user.language))
+    await menu_search_start(callback, state, session)
